@@ -1,0 +1,56 @@
+version: '3.5'
+services:
+  app-celery-redis:
+    image: redis:latest
+    container_name: app-celery-redis
+    hostname: app-celery-redis
+    command:
+    - --loglevel
+    - debug
+    - --save
+    - "5 1"
+    ports:
+    - "6379:6379"
+    volumes:
+    - ./data:/data
+  app-celery-producer:
+    image: casmssm/app-celery:latest
+    container_name: app-celery-producer
+    hostname: app-celery-producer
+    environment:
+      REDIS_HOST: app-celery-redis    
+    command:
+    - python
+    - produtor.py
+  app-celery-worker:
+    image: casmssm/app-celery:latest
+    container_name: app-celery-worker
+    hostname: app-celery-worker
+    environment:
+      REDIS_HOST: app-celery-redis    
+  app-celery-flower:
+    image: casmssm/app-celery:latest
+    container_name: app-celery-flower
+    hostname: app-celery-flower
+    environment:
+      REDIS_HOST: app-celery-redis    
+    command:
+    - celery
+    - --broker
+    - redis://app-celery-redis:6379/0
+    - flower
+    - --port=5555
+    ports:
+    - "5555:5555"
+  app-celery-metrics:
+    image: casmssm/app-celery:latest
+    container_name: app-celery-metrics
+    hostname: app-celery-metrics
+    environment:
+      REDIS_HOST: app-celery-redis    
+    command:
+    - celery-prometheus-exporter
+    - --broker
+    - redis://app-celery-redis:6379/0
+    ports:
+    - "8888:8888"
